@@ -22,6 +22,8 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+// Exposing new syscall to user programs.
+int getcount(int);
 
 // ulib.c
 int stat(char*, struct stat*);

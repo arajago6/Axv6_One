@@ -1,5 +1,11 @@
+#include "syscall.h"
+
 // Segments in proc->gdt.
 #define NSEGS     7
+
+// Number of syscalls that getcount syscall can track per process.
+// Should be equal to greater than total number of syscalls.
+#define MAXSYSCALLS	30
 
 // Per-CPU state
 struct cpu {
@@ -66,6 +72,7 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+  int sccount[MAXSYSCALLS];    // System call count
 };
 
 // Process memory is laid out contiguously, low addresses first:

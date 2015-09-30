@@ -36,7 +36,6 @@ allocproc(void)
 {
   struct proc *p;
   char *sp;
-
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if(p->state == UNUSED)
@@ -69,6 +68,9 @@ found:
   p->context = (struct context*)sp;
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
+
+  // Reset array that tracks system call count.
+  memset(p->sccount, 0, sizeof p->sccount);
 
   return p;
 }
@@ -455,5 +457,3 @@ procdump(void)
     cprintf("\n");
   }
 }
-
-

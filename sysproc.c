@@ -88,3 +88,15 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+// return how many times the specified syscall has occurred
+// since process start.
+int
+sys_getcount(void)
+{
+  int scid;
+
+  if(argint(0, &scid) < 0)
+    return -1;
+  return proc->sccount[scid-1];
+}
