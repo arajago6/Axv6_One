@@ -1,0 +1,22 @@
+Writeup for philosphers problem:
+
+This problem has a certain amount of philosophers seated around a circular table, trying to eat meals using shared forks.
+
+If there are n philosphers, only n+1 forks are available but each philosopher needs two forks to eat a meal.
+
+There are three solutions to this problem, all of which aim to prevent deadlock and starvation and promote exclusivity and concurrency.
+
+Footman solution:
+
+If only a subset of the philosophers is allowed to eat, then we can achieve our goals stated above.
+Consider the number of philosophers as 5. If only 4 are allowed to eat at a time, then each philosopher can have one fork after which two forks are remaining. Since we consider the eating time as bounded, two of the 4 philosophers who take up the extra forks will put them down after a while and the philosophers who have not yet eaten can enjoy their meal. This takes less time since only a subset of philosophers is allowed to eat.
+
+Left-Handed solution:
+
+If atleast one of the philosophers is left handed, that person will pick up left fork first and wait for right fork while others do the opposite. Thus contention is minimized and deadlock is avoided. The time for this solution is also less when compared with Tannenbaum since contention is minimized and wait times are less.
+
+Tannenbaum solution:
+
+This solution takes into account the states of philoophers. Their state can be thinking or hungry or eating. This solution does a test at every philosopher and allows him to eat if neither of his neighbours are eating and he is hungry. This solution has maximum time of all, since it has to account for all philosophers, test on neighbours and wait for them to finish. This solution can also result in starvation if the wait time is not bounded and if a philosopher is continuously neglected.
+
+
