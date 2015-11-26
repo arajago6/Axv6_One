@@ -22,8 +22,3 @@
 #define SYS_close  21
 // Adding index for the new syscall.
 #define SYS_getcount  22
-#define SYS_thread_create	23
-#define SYS_thread_join		24
-#define SYS_mtx_create  25
-#define SYS_mtx_lock  26
-#define SYS_mtx_unlock  27
