@@ -71,6 +71,7 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
   int sccount[MAXSYSCALLS];    // System call count
+  int is_thread;		       // Variable to let know type of current process
 };
 
 // Process memory is laid out contiguously, low addresses first:

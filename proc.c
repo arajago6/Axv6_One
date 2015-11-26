@@ -7,6 +7,8 @@
 #include "proc.h"
 #include "spinlock.h"
 
+#define	PGSIZE 4096
+
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
@@ -456,4 +458,92 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+
+// Creates a thread, that shares the address space of the parent
+// but has the stack that user allocated 
+int
+thread_create(void (*tMain)(void*), void *stack, void *arg)
+{
+  int i, pid;
+  struct proc *np;
+  // Allocate process.
+  if((np = allocproc()) == 0)
+     return -1;
+  // Copy the parent's process state
+  np->pgdir = proc->pgdir;
+  np->sz = proc->sz;
+  np->parent = proc;
+  *np->tf = *proc->tf;
+
+  // Clear %eax so that fork returns 0 in the child.
+  np->tf->eax = 0;
+  
+  // Derive the stack size using function arg #n to esp
+  uint sizeofstack = *(uint *)proc->tf->ebp - proc->tf->esp;
+  // Shift stack pointer the trapframe bottom
+  np->tf->esp = (uint)stack+PGSIZE - sizeofstack;
+  // Derive the size needed above ebp
+  uint sizeofcrown = *(uint *)proc->tf->ebp - proc->tf->ebp;
+  // Shift the base pointer below crownsize
+  np->tf->ebp = (uint)stack+PGSIZE - sizeofcrown;
+  // Copy parent processee's stack to child where needed to get the arg 
+  memmove((void *)(np->tf->esp),(const void *)(proc->tf->esp), sizeofstack);
+
+  np->tf->eip = (uint)(tMain+1);
+
+  for(i = 0; i < NOFILE; i++)
+    if(proc->ofile[i])
+      np->ofile[i] = filedup(proc->ofile[i]);
+  np->cwd = idup(proc->cwd);
+
+  pid = np->pid;
+  np->state = RUNNABLE;
+  safestrcpy(np->name, proc->name, sizeof(proc->name));
+
+  np->is_thread = 1;
+  return pid;
+}	
+
+int thread_join(void **stack){
+
+  struct proc *prs;
+  int havekids, pid;
+
+  acquire(&ptable.lock);
+  for(;;){
+    // Scan through entire table looking for zombie children.
+    havekids = 0;
+    for(prs = ptable.proc; prs < &ptable.proc[NPROC]; prs++){
+      //check if proc is a child of p and a thread
+      if(prs->parent != proc && prs->is_thread==1)
+        continue;
+      havekids = 1;
+      if(prs->state == ZOMBIE){
+        // Found one.
+        pid = prs->pid;
+        prs->kstack = 0;
+        freevm(prs->pgdir);
+        prs->state = UNUSED;
+        prs->pid = 0;
+        prs->parent = 0;
+        prs->name[0] = 0;
+        prs->killed = 0;
+        release(&ptable.lock);
+        *stack= (void*)prs->tf->esp;
+        return pid;
+      }
+    }
+
+    // No point waiting if we don't have any children.
+    if(!havekids || proc->killed){
+      release(&ptable.lock);
+      return -1;
+    }
+
+    // Wait for children to exit.  (See wakeup1 call in proc_exit.)
+    sleep(proc, &ptable.lock);  //DOC: wait-sleep
+  }
+  return 0;
+
 }

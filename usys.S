@@ -31,3 +31,9 @@ SYSCALL(sleep)
 SYSCALL(uptime)
 // To define asm routine for the new call.
 SYSCALL(getcount)
+// To define asm routines for the new thread management calls.
+SYSCALL(thread_create)
+SYSCALL(thread_join)
+SYSCALL(mtx_create)
+SYSCALL(mtx_lock)
+SYSCALL(mtx_unlock)
