@@ -9,17 +9,6 @@
 #include "proc.h"
 #include "spinlock.h"
 
-#define NMUTEX 50
-
-typedef struct _lock_t{
-  uint flag;
-}lock_t;
-
-// Following are for the new mutex functions
-int mutex_index = 0;
-int mutex_array[NMUTEX];
-struct spinlock mutex_locks[NMUTEX];
-
 void
 initlock(struct spinlock *lk, char *name)
 {
@@ -99,6 +88,7 @@ holding(struct spinlock *lock)
   return lock->locked && lock->cpu == cpu;
 }
 
+
 // Pushcli/popcli are like cli/sti except that they are matched:
 // it takes two popcli to undo two pushcli.  Also, if interrupts
 // are off, then pushcli, popcli leaves them off.
@@ -125,46 +115,3 @@ popcli(void)
     sti();
 }
 
-// New functions for mutex creation, locking and unlocking
-
-// Mutex unlocking function
-// If lock_id and mutex_array values are valid, release mutex
-int 
-mtx_unlock(int lock_id){
-  if(lock_id < 0 || lock_id > mutex_index){
-    return -1;
-  }
-  if(mutex_array[lock_id] != proc->pid){
-    return -2;
-  }
-  release(&mutex_locks[lock_id]);
-  return 0;
-}
-
-// Mutex locking function
-// Test for index correctness, lock a mutex if it is available
-// and not taken
-int 
-mtx_lock(int lock_id){
-  if(lock_id < 0 || lock_id > mutex_index){
-    return -1;
-  }
-  acquire(&mutex_locks[lock_id]);
-  mutex_array[lock_id] = proc->pid;
-  return 0;
-}
-
-// Mutex creation function
-// Test if a mutex is available and create one
-int 
-mtx_create(int locked){
-  char* mutnm = "mutex";
-  if(mutex_index < NMUTEX){
-    initlock(&mutex_locks[mutex_index], mutnm);
-    if(locked){
-      mtx_lock(mutex_index);
-    }
-    return(mutex_index + 1);
-  }
-  return -1;
-}
