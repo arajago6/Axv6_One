@@ -24,6 +24,12 @@ int sleep(int);
 int uptime(void);
 // Exposing new syscall to user programs.
 int getcount(int);
+// Exposing new thread management syscalls to user programs.
+int thread_create(void (*tMain)(void*), void *stack, void *arg); 
+int thread_join(void **stack); 
+int mtx_create(int);
+int mtx_lock(int);
+int mtx_unlock(int);
 
 // ulib.c
 int stat(char*, struct stat*);
