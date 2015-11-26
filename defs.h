@@ -116,6 +116,9 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
+// New function definitions added
+int 		thread_create(void (*tMain)(void*), void *stack, void *arg); 
+int 		thread_join(void **stack);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
@@ -128,6 +131,10 @@ void            initlock(struct spinlock*, char*);
 void            release(struct spinlock*);
 void            pushcli(void);
 void            popcli(void);
+// New function definitions added
+int 		mtx_unlock(int);
+int 		mtx_lock(int);
+int 		mtx_create(int);
 
 // string.c
 int             memcmp(const void*, const void*, uint);
