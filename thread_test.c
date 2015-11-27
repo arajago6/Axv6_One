@@ -8,27 +8,29 @@
 #include "x86.h"
 
 int shared_count = 0;
-int locked = 1;
-//mtx_create(locked);
+int locked = 0;
+//int ret = mtx_create(locked);
 
+// Child prints the shared count value
 void child (void* args) {
-  //mtx_lock(1);
+  //mtx_lock(locked);
   shared_count = shared_count+2;
-  //mtx_unlock(1);
+  //mtx_unlock(locked);
   printf(1, "Shared count is at %p\n", shared_count);
   printf(1, "hello, this is child! passed argument = %x \n", *(int*)args);
   return;
 }
 
+// Parent creates child and prints the shared count value
 int main (int argc, char** argv) {
   int a = 0xabcd;
   // allocate 1-page for new thread's stack.
   void* stack = malloc (sizeof(char)*PGSIZE);
   printf(1, "Stack is at %p\n", stack);
   printf(1, "Shared count is at %p\n", shared_count);
-  //mtx_lock(1);
+  //mtx_lock(locked);
   shared_count = shared_count+1;
-  //mtx_unlock(1);
+  //mtx_unlock(locked);
   int rc = thread_create ( &child, stack, (void*)&a);
   if (rc < 0) {
     printf (1, "thread create failed \n");

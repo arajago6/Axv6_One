@@ -490,6 +490,7 @@ thread_create(void (*tMain)(void*), void *stack, void *arg)
   // Copy parent processee's stack to child where needed to get the arg 
   memmove((void *)(np->tf->esp),(const void *)(proc->tf->esp), sizeofstack);
 
+  // Set the instruction pointer to point the function passed
   np->tf->eip = (uint)(tMain+1);
 
   for(i = 0; i < NOFILE; i++)
@@ -501,11 +502,15 @@ thread_create(void (*tMain)(void*), void *stack, void *arg)
   np->state = RUNNABLE;
   safestrcpy(np->name, proc->name, sizeof(proc->name));
 
+  // Modify the is_thread value and return pid
   np->is_thread = 1;
   return pid;
 }	
 
-int thread_join(void **stack){
+// Causes the caller to block until a child thread has terminated
+// Similar to the wait() call, but operates on children that share same address space
+int 
+thread_join(void **stack){
 
   struct proc *prs;
   int havekids, pid;
@@ -545,5 +550,4 @@ int thread_join(void **stack){
     sleep(proc, &ptable.lock);  //DOC: wait-sleep
   }
   return 0;
-
 }
