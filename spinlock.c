@@ -15,6 +15,9 @@ typedef struct _lock_t{
   uint flag;
 }lock_t;
 
+int mutex_var = 0;
+struct spinlock mut_array[NMUTEX];
+
 // Following are for the new mutex functions
 //int mutex_index = 0;
 //int mutex_array[NMUTEX];
@@ -130,15 +133,30 @@ popcli(void)
 
 // Mutex unlocking function using xv6 atomicity (xchg)
 // Unlock a thread that is waiting
+/*
 int 
 mtx_unlock(int lock_id){
   
   xchg((volatile uint *)&lock_id, 0);
   return 0;
 }
+*/
+
+int 
+mtx_unlock(int lock_id)
+{
+  // Test if lock_id is valid, if yes, release
+  if(lock_id < 0 || lock_id > mutex_var)
+  {
+    return -1;
+  }
+  release(&mut_array[lock_id]);
+  return 0;
+}
 
 // Mutex locking function using xv6 atomicity (xchg)
 // Lock using the provided id
+/*
 int 
 mtx_lock(int lock_id){
 
@@ -146,8 +164,22 @@ mtx_lock(int lock_id){
     ;// Loop until xchg retrun is not 1
   return 0;
 }
+*/
+
+int 
+mtx_lock(int lock_id)
+{
+  // Test if lock_id is valid, if yes, acquire
+  if(lock_id < 0 || lock_id > mutex_var)
+  {
+    return -1;
+  }
+  acquire(&mut_array[lock_id]);
+  return 0;
+}
 
 // Mutex creation function using xv6 atomicity (xchg)
+/*
 int 
 mtx_create(int lock_id){
 
@@ -155,4 +187,20 @@ mtx_create(int lock_id){
   return 0;
 
 }
+*/
 
+int 
+mtx_create(int locked)
+{
+  // Create a mutex if it is possible
+  char* name = "mutex";
+  if(mutex_var < NMUTEX)
+    {
+    initlock(&mut_array[mutex_var], name);
+    if(locked){
+      mtx_lock(mutex_var);
+    }
+    return(mutex_var++);
+  }
+  return -1;
+}

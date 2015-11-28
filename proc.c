@@ -466,6 +466,11 @@ int
 thread_create(void (*tMain)(void*), void *stack, void *arg)
 {
   int i, pid;
+  // Declaring new variables
+  uint maxidx = 50; // Should be more than syscall count
+  uint ssize = 4*maxidx + 4;
+  uint sp = (uint)stack + ssize;
+  uint * ustack = (uint *)stack;
   struct proc *np;
   // Allocate process.
   if((np = allocproc()) == 0)
@@ -479,19 +484,16 @@ thread_create(void (*tMain)(void*), void *stack, void *arg)
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
   
-  // Derive the stack size using function arg #n to esp
-  uint sizeofstack = *(uint *)proc->tf->ebp - proc->tf->esp;
-  // Shift stack pointer the trapframe bottom
-  np->tf->esp = (uint)stack+PGSIZE - sizeofstack;
-  // Derive the size needed above ebp
-  uint sizeofcrown = *(uint *)proc->tf->ebp - proc->tf->ebp;
-  // Shift the base pointer below crownsize
-  np->tf->ebp = (uint)stack+PGSIZE - sizeofcrown;
-  // Copy parent processee's stack to child where needed to get the arg 
-  memmove((void *)(np->tf->esp),(const void *)(proc->tf->esp), sizeofstack);
-
-  // Set the instruction pointer to point the function passed
-  np->tf->eip = (uint)(tMain+1);
+  // Initializing the user stack similar to exec.c
+  ustack[maxidx - 0] = 0xffffffff;        // fake return PC - similar to exec.c
+  ustack[maxidx - 1] = 1;                 // single argument - similar to exec.c
+  ustack[maxidx - 2] = (uint)arg;         // argument pointer - similar to exec.c
+  ustack[maxidx - 3] = sp;
+  ustack[maxidx - 4] = 0;
+  sp -= 4*4;
+  np->tf->esp = sp;  // Set the stack pointer
+  np->tf->ebp = (uint)ustack + 4;  // Set the base pointer
+  np->tf->eip = (uint)(tMain);  // Set the instruction pointer to point the function passed
 
   for(i = 0; i < NOFILE; i++)
     if(proc->ofile[i])
