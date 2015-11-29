@@ -8,6 +8,8 @@
 #include "spinlock.h"
 
 #define	PGSIZE 4096
+#define CALLCOUNT 27
+#define STKELEMSIZE 4
 
 struct {
   struct spinlock lock;
@@ -465,16 +467,12 @@ procdump(void)
 int
 thread_create(void (*tMain)(void*), void *stack, void *arg)
 {
-  int i, pid;
-  // Declaring new variables
-  uint maxidx = 50; // Should be more than syscall count
-  uint ssize = 4*maxidx + 4;
-  uint sp = (uint)stack + ssize;
-  uint * ustack = (uint *)stack;
+  int i, pid; 
   struct proc *np;
   // Allocate process.
   if((np = allocproc()) == 0)
      return -1;
+
   // Copy the parent's process state
   np->pgdir = proc->pgdir;
   np->sz = proc->sz;
@@ -483,16 +481,22 @@ thread_create(void (*tMain)(void*), void *stack, void *arg)
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
-  
+
+// Declaring new variables
+  uint valid_lim = CALLCOUNT; // Should be more than syscall count
+  uint stack_sz = STKELEMSIZE*valid_lim + STKELEMSIZE;
+  uint sp = (uint)stack + stack_sz;
+  uint * usr_stack = (uint *)stack;
+
   // Initializing the user stack similar to exec.c
-  ustack[maxidx - 0] = 0xffffffff;        // fake return PC - similar to exec.c
-  ustack[maxidx - 1] = 1;                 // single argument - similar to exec.c
-  ustack[maxidx - 2] = (uint)arg;         // argument pointer - similar to exec.c
-  ustack[maxidx - 3] = sp;
-  ustack[maxidx - 4] = 0;
-  sp -= 4*4;
-  np->tf->esp = sp;  // Set the stack pointer
-  np->tf->ebp = (uint)ustack + 4;  // Set the base pointer
+  usr_stack[valid_lim - 0] = 0xffffffff;        // fake return PC - similar to exec.c
+  usr_stack[valid_lim - 1] = 1;                 // single argument - similar to exec.c
+
+  usr_stack[valid_lim - 2] = (uint)arg;         // argument pointer - similar to exec.c
+  usr_stack[valid_lim - 3] = sp;		// pointer to stack top
+
+  np->tf->ebp = (uint)usr_stack + 4;  // Set the base pointer
+  np->tf->esp = sp - STKELEMSIZE*STKELEMSIZE;  // Set the stack pointer
   np->tf->eip = (uint)(tMain);  // Set the instruction pointer to point the function passed
 
   for(i = 0; i < NOFILE; i++)

@@ -14,7 +14,7 @@ int locked = 0;
 // Child prints the shared count value
 void child (void* args) {
   //mtx_lock(locked);
-  shared_count = shared_count+2;
+  shared_count = shared_count+20;
   //mtx_unlock(locked);
   printf(1, "Shared count is at %p\n", shared_count);
   printf(1, "hello, this is child! passed argument = %x \n", *(int*)args);
@@ -29,7 +29,7 @@ int main (int argc, char** argv) {
   printf(1, "Stack is at %p\n", stack);
   printf(1, "Shared count is at %p\n", shared_count);
   //mtx_lock(locked);
-  shared_count = shared_count+1;
+  shared_count = shared_count+10;
   //mtx_unlock(locked);
   int rc = thread_create ( &child, stack, (void*)&a);
   if (rc < 0) {

@@ -9,19 +9,15 @@
 #include "proc.h"
 #include "spinlock.h"
 
-#define NMUTEX 50
-
-typedef struct _lock_t{
-  uint flag;
-}lock_t;
+#define NUMMUTEXES 27
 
 int mutex_var = 0;
-struct spinlock mut_array[NMUTEX];
+struct spinlock mut_array[NUMMUTEXES];
 
 // Following are for the new mutex functions
 //int mutex_index = 0;
-//int mutex_array[NMUTEX];
-//struct spinlock mutex_locks[NMUTEX];
+//int mutex_array[NUMMUTEXES];
+//struct spinlock mutex_locks[NUMMUTEXES];
 
 void
 initlock(struct spinlock *lk, char *name)
@@ -194,7 +190,7 @@ mtx_create(int locked)
 {
   // Create a mutex if it is possible
   char* name = "mutex";
-  if(mutex_var < NMUTEX)
+  if(mutex_var < NUMMUTEXES)
     {
     initlock(&mut_array[mutex_var], name);
     if(locked){
