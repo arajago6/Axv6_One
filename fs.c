@@ -364,11 +364,12 @@ bmap(struct inode *ip, uint bn)
       ip->addrs[bn] = addr = balloc(ip->dev);
     return addr;
   }
-  bn -= NDIRECT;
 
+  // Subtract NDIRECT indexes input offset, check if one indirect block will be enough
+  bn -= NDIRECT;
   if(bn < NINDIRECT){
-    // Load indirect block, allocating if necessary.
-    if((addr = ip->addrs[NDIRECT]) == 0)
+    // Load first indirect block, allocating if necessary.
+    if((addr = ip->addrs[NDIRECT]) == 0) // Access index is 10
       ip->addrs[NDIRECT] = addr = balloc(ip->dev);
     bp = bread(ip->dev, addr);
     a = (uint*)bp->data;
@@ -380,6 +381,46 @@ bmap(struct inode *ip, uint bn)
     return addr;
   }
 
+  // Subtract NINDIRECT indexes input offset, check if one more indirect block will be enough
+  bn -= NINDIRECT;
+  if(bn < NINDIRECT){
+    // Load second indirect block, allocating if necessary.
+    if((addr = ip->addrs[NDIRECT+1]) == 0) // Access index is 11
+      ip->addrs[NDIRECT+1] = addr = balloc(ip->dev);
+    bp = bread(ip->dev, addr);
+    a = (uint*)bp->data;
+    if((addr = a[bn]) == 0){
+      a[bn] = addr = balloc(ip->dev);
+      log_write(bp);
+    }
+    brelse(bp);
+    return addr;
+  }
+
+  // Subtract NINDIRECT indexes input offset again, check if one double indirect block will be enough
+  bn -= NINDIRECT;
+  if(bn < NDBINDIRECT){
+        // Load double indirect block, allocating if necessary.
+        if((addr = ip->addrs[NDIRECT+2]) == 0) // Access index is 12
+          ip->addrs[NDIRECT+2] = addr = balloc(ip->dev);
+
+        bp = bread(ip->dev, addr);
+        a = (uint*)bp->data;
+        // Calculating indirection indices for first and second levels
+        if ((addr = a[bn/(NINDIRECT)]) == 0) { 
+              a[bn/(NINDIRECT)] = addr = balloc(ip->dev);
+              log_write(bp);
+          }
+          brelse(bp);
+        bp = bread(ip->dev, addr);
+        a = (uint*)bp->data;
+         if ((addr = a[bn%(NINDIRECT)]) == 0) {
+              a[bn%(NINDIRECT)] = addr = balloc(ip->dev);
+              log_write(bp);
+          }
+        brelse(bp);
+        return addr;
+    }
   panic("bmap: out of range");
 }
 

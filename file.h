@@ -21,7 +21,7 @@ struct inode {
   short minor;
   short nlink;
   uint size;
-  uint addrs[NDIRECT+1];
+  uint addrs[NDIRECT+2+1]; // Updated block addresses, 10 direct, 2 indirect and 1 double indirect pointers
 };
 #define I_BUSY 0x1
 #define I_VALID 0x2
